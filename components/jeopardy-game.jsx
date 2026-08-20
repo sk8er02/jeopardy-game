@@ -14,7 +14,9 @@ export default function JeopardyGame() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [listeningTranscript, setListeningTranscript] = useState('');
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
   const recognitionRef = useRef(null);
+  const utteranceRef = useRef(null);
 
   const categories = ['Science', 'History', 'Literature', 'Pop Culture', 'Sports', 'Geography'];
   const amounts = [200, 400, 600, 800, 1000];
@@ -67,13 +69,29 @@ export default function JeopardyGame() {
   };
 
   const speakClue = (text) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    // iOS has a bug where speak() called immediately after cancel() is
+    // silently dropped. A short delay avoids it.
+    setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      utteranceRef.current = utterance; // keep a reference so it isn't garbage collected mid-speech
       window.speechSynthesis.speak(utterance);
-    }
+    }, 50);
+  };
+
+  const unlockAudio = () => {
+    if (!('speechSynthesis' in window)) return;
+    const utterance = new SpeechSynthesisUtterance('Voice enabled');
+    utterance.volume = 1;
+    utterance.onend = () => setAudioUnlocked(true);
+    utterance.onerror = () => setAudioUnlocked(true);
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+    setAudioUnlocked(true);
   };
 
   const handleClueSelect = async (category, amount) => {
@@ -81,15 +99,6 @@ export default function JeopardyGame() {
     if (usedClues.has(clueKey)) {
       setFeedback('Already answered! Pick another.');
       return;
-    }
-
-    // iOS Safari only allows speechSynthesis.speak() when it's triggered
-    // directly by a user gesture. Priming it here (before the await below)
-    // keeps that gesture "alive" so the real clue can be spoken after the
-    // fetch completes.
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
     }
 
     const clueData = await generateClue(category, amount);
@@ -148,6 +157,15 @@ export default function JeopardyGame() {
           <h1 className="text-4xl md:text-5xl font-bold text-yellow-300 mb-2">JEOPARDY!</h1>
           <p className="text-xl md:text-2xl text-white font-semibold">Score: ${score}</p>
           {hasSTT && <p className="text-sm text-green-300 mt-2">✓ Speech recognition enabled</p>}
+          {!audioUnlocked && (
+            <button
+              onClick={unlockAudio}
+              type="button"
+              className="mt-4 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-6 py-2 rounded-full inline-flex items-center gap-2"
+            >
+              <Volume2 size={18} /> Tap to Enable Voice
+            </button>
+          )}
         </div>
 
         {gameState === 'board' ? (
