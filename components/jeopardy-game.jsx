@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Volume2, RotateCcw, Mic, Send } from 'lucide-react';
 
@@ -235,8 +233,13 @@ export default function JeopardyGame() {
                       return (
                         <button
                           key={amount}
-                          onClick={() => handleClueSelect(category, amount)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            console.log('Button clicked:', category, amount);
+                            handleClueSelect(category, amount);
+                          }}
                           disabled={isUsed || loading}
+                          type="button"
                           className={`w-full py-2 md:py-3 font-bold text-base md:text-lg rounded transition-all ${
                             isUsed
                               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
