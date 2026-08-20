@@ -83,6 +83,15 @@ export default function JeopardyGame() {
       return;
     }
 
+    // iOS Safari only allows speechSynthesis.speak() when it's triggered
+    // directly by a user gesture. Priming it here (before the await below)
+    // keeps that gesture "alive" so the real clue can be spoken after the
+    // fetch completes.
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+    }
+
     const clueData = await generateClue(category, amount);
     if (clueData) {
       setCurrentClue(clueData);
@@ -91,7 +100,7 @@ export default function JeopardyGame() {
       setGameState('clue');
       setUserAnswer('');
       setFeedback('');
-      setTimeout(() => speakClue(clueData.clue), 500);
+      speakClue(clueData.clue);
     }
   };
 
