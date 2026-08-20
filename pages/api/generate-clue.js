@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
+        model: 'mistralai/mistral-7b-instruct',
         max_tokens: 200,
         messages: [
           {
