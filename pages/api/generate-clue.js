@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'claude-3.5-sonnet',
+        model: 'anthropic/claude-3.5-sonnet',
         max_tokens: 200,
         messages: [
           {
@@ -50,11 +50,17 @@ ${amount === 1000 ? '- This is FINAL JEOPARDY! Make it very challenging and prof
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenRouter API error:', errorData);
-      return res.status(response.status).json({ 
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { text: await response.text() };
+      }
+      console.error('OpenRouter API error:', response.status, errorData);
+      return res.status(response.status).json({
         error: 'Failed to generate clue',
-        details: errorData.error?.message || 'Unknown error'
+        details: errorData.error?.message || JSON.stringify(errorData) || 'Unknown error',
+        status: response.status
       });
     }
 
