@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Volume2, RotateCcw, Mic, Send } from 'lucide-react';
 
@@ -137,6 +139,7 @@ export default function JeopardyGame() {
   };
 
   const handleClueSelect = async (category, amount) => {
+    console.log('Clue selected:', category, amount);
     const clueKey = `${category}-${amount}`;
 
     if (usedClues.has(clueKey)) {
@@ -145,6 +148,7 @@ export default function JeopardyGame() {
     }
 
     const clueData = await generateClue(category, amount);
+    console.log('Clue data received:', clueData);
     if (clueData) {
       setCurrentClue(clueData);
       setCurrentCategory(category);
@@ -154,7 +158,10 @@ export default function JeopardyGame() {
       setFeedback('');
 
       // Speak the clue after a short delay
-      setTimeout(() => speakClue(clueData.clue), 500);
+      setTimeout(() => {
+        console.log('Speaking clue:', clueData.clue);
+        speakClue(clueData.clue);
+      }, 500);
     }
   };
 
