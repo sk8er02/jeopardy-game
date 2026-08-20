@@ -3,26 +3,12 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-  // Force rebuild
 
   const { category, amount } = req.body;
 
   // Validate inputs
   if (!category || !amount) {
     return res.status(400).json({ error: 'Missing category or amount' });
-  }
-
-  // Test clue - remove this once API works
-  const testClues = {
-    'Science-200': { clue: 'This is the symbol for Hydrogen', answer: 'What is H?', correctAnswerKeyword: 'H' },
-    'Science-400': { clue: 'The speed of light in vacuum', answer: 'What is 299,792 kilometers per second?', correctAnswerKeyword: 'light' },
-    'History-200': { clue: 'The year the Titanic sank', answer: 'What is 1912?', correctAnswerKeyword: '1912' },
-    'Literature-200': { clue: 'Author of Pride and Prejudice', answer: 'Who is Jane Austen?', correctAnswerKeyword: 'Austen' },
-  };
-
-  const testKey = `${category}-${amount}`;
-  if (testClues[testKey]) {
-    return res.status(200).json(testClues[testKey]);
   }
 
   // Check for API key
@@ -39,8 +25,9 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'nousresearch/nous-hermes-2-mistral-7b-dpo',
-        max_tokens: 200,
+        model: 'nvidia/nemotron-3-nano-30b-a3b:free',
+        max_tokens: 400,
+        reasoning: { enabled: false },
         messages: [
           {
             role: 'user',
@@ -85,15 +72,24 @@ ${amount === 1000 ? '- This is FINAL JEOPARDY! Make it very challenging and prof
       return res.status(500).json({ error: 'Invalid response format' });
     }
 
-    const textContent = data.choices[0].message.content;
+    const textContent = data.choices[0].message.content || '';
 
-    // Parse the JSON response
+    // Extract JSON object from the response (models sometimes wrap it in markdown or add preamble)
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('No JSON found in clue response:', textContent);
+      return res.status(500).json({
+        error: 'Invalid clue format',
+        details: 'Could not find JSON in generated clue'
+      });
+    }
+
     let clueData;
     try {
-      clueData = JSON.parse(textContent);
+      clueData = JSON.parse(jsonMatch[0]);
     } catch (parseError) {
       console.error('Failed to parse clue response:', textContent);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Invalid clue format',
         details: 'Could not parse generated clue'
       });
