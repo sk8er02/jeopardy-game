@@ -11,6 +11,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing category or amount' });
   }
 
+  // Test clue - remove this once API works
+  const testClues = {
+    'Science-200': { clue: 'This is the symbol for Hydrogen', answer: 'What is H?', correctAnswerKeyword: 'H' },
+    'Science-400': { clue: 'The speed of light in vacuum', answer: 'What is 299,792 kilometers per second?', correctAnswerKeyword: 'light' },
+    'History-200': { clue: 'The year the Titanic sank', answer: 'What is 1912?', correctAnswerKeyword: '1912' },
+    'Literature-200': { clue: 'Author of Pride and Prejudice', answer: 'Who is Jane Austen?', correctAnswerKeyword: 'Austen' },
+  };
+
+  const testKey = `${category}-${amount}`;
+  if (testClues[testKey]) {
+    return res.status(200).json(testClues[testKey]);
+  }
+
   // Check for API key
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -25,7 +38,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'mistralai/mistral-7b-instruct',
+        model: 'nousresearch/nous-hermes-2-mistral-7b-dpo',
         max_tokens: 200,
         messages: [
           {
