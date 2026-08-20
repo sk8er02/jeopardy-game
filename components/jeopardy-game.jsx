@@ -91,14 +91,17 @@ export default function JeopardyGame() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to generate clue');
+        const errorMsg = errorData.details || errorData.error || 'Failed to generate clue';
+        console.error('API Error:', errorMsg);
+        throw new Error(errorMsg);
       }
 
       const clueData = await response.json();
       return clueData;
     } catch (error) {
       console.error('Error generating clue:', error);
-      setFeedback(`Error: ${error.message}`);
+      const errorMessage = error.message || String(error);
+      setFeedback(`❌ ${errorMessage}`);
       return null;
     } finally {
       setLoading(false);
