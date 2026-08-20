@@ -41,9 +41,8 @@ Return ONLY a valid JSON object with this exact format (no markdown, no backtick
 }
 
 Guidelines:
-- Make the clue ${amount <= 400 ? 'easy and straightforward' : amount <= 600 ? 'moderately challenging' : 'quite difficult and tricky'}.
+- Make the clue ${amount <= 400 ? 'easy and straightforward' : amount <= 600 ? 'moderately challenging' : amount <= 800 ? 'quite difficult and tricky' : 'the hardest clue in the category, expert-level'}.
 - The clue should be clear and unambiguous.
-${amount === 1000 ? '- This is FINAL JEOPARDY! Make it very challenging and profound.' : ''}
 - Ensure the answer keyword is a unique, checkable word.`,
           },
         ],
