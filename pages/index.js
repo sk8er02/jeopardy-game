@@ -1,19 +1,7 @@
-import dynamic from 'next/dynamic';
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
-
-const JeopardyGame = dynamic(() => import('../components/jeopardy-game'), {
-  ssr: false,
-  loading: () => <div className="flex items-center justify-center min-h-screen">Loading...</div>,
-});
+import JeopardyGame from '../components/jeopardy-game';
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <>
       <Head>
@@ -21,7 +9,7 @@ export default function Home() {
         <meta name="description" content="AI-powered Jeopardy game with text-to-speech and speech-to-text" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      {mounted && <JeopardyGame />}
+      <JeopardyGame />
     </>
   );
 }
