@@ -17,6 +17,7 @@ export default function JeopardyGame() {
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const recognitionRef = useRef(null);
   const utteranceRef = useRef(null);
+  const usedAnswersByCategory = useRef({});
 
   const categories = ['Science', 'History', 'Literature', 'Pop Culture', 'Sports', 'Geography'];
   const amounts = [200, 400, 600, 800, 1000];
@@ -48,10 +49,11 @@ export default function JeopardyGame() {
   const generateClue = async (category, amount) => {
     setLoading(true);
     try {
+      const previousAnswers = usedAnswersByCategory.current[category] || [];
       const response = await fetch('/api/generate-clue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, amount }),
+        body: JSON.stringify({ category, amount, previousAnswers }),
       });
 
       if (!response.ok) {
@@ -109,6 +111,8 @@ export default function JeopardyGame() {
       setGameState('clue');
       setUserAnswer('');
       setFeedback('');
+      const prior = usedAnswersByCategory.current[category] || [];
+      usedAnswersByCategory.current[category] = [...prior, clueData.answer];
       speakClue(clueData.clue);
     }
   };
@@ -119,7 +123,11 @@ export default function JeopardyGame() {
       return;
     }
 
-    const isCorrect = userAnswer.toLowerCase().includes(currentClue.correctAnswerKeyword.toLowerCase());
+    const normalizedAnswer = userAnswer.toLowerCase();
+    const isCorrect = currentClue.acceptableAnswers.some((accepted) => {
+      const normalizedAccepted = accepted.toLowerCase();
+      return normalizedAnswer.includes(normalizedAccepted) || normalizedAccepted.includes(normalizedAnswer);
+    });
     if (isCorrect) {
       setScore(score + currentAmount);
       setFeedback(`✓ Correct! The answer is: ${currentClue.answer}`);
@@ -145,6 +153,7 @@ export default function JeopardyGame() {
     setUserAnswer('');
     setFeedback('');
     setCurrentClue(null);
+    usedAnswersByCategory.current = {};
   };
 
   const isGameOver = usedClues.size === categories.length * amounts.length;

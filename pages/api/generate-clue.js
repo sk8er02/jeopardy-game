@@ -4,12 +4,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { category, amount } = req.body;
+  const { category, amount, previousAnswers } = req.body;
 
   // Validate inputs
   if (!category || !amount) {
     return res.status(400).json({ error: 'Missing category or amount' });
   }
+
+  const avoidList = Array.isArray(previousAnswers) ? previousAnswers.filter(Boolean) : [];
 
   // Check for API key
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -26,7 +28,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'nvidia/nemotron-3-nano-30b-a3b:free',
-        max_tokens: 400,
+        max_tokens: 500,
         reasoning: { enabled: false },
         messages: [
           {
@@ -37,13 +39,14 @@ Return ONLY a valid JSON object with this exact format (no markdown, no backtick
 {
   "clue": "The actual clue to read aloud",
   "answer": "The correct answer in question format (e.g., 'Who is...', 'What is...', 'Where is...')",
-  "correctAnswerKeyword": "One key word from the answer to check against"
+  "acceptableAnswers": ["2 to 5 short keywords or phrases a player might reasonably say that should count as correct — include the core term, its full expansion if it's an abbreviation, and any common synonym or description a person might use instead of the exact term"]
 }
 
 Guidelines:
 - Make the clue ${amount <= 400 ? 'easy and straightforward' : amount <= 600 ? 'moderately challenging' : amount <= 800 ? 'quite difficult and tricky' : 'the hardest clue in the category, expert-level'}.
 - The clue should be clear and unambiguous.
-- Ensure the answer keyword is a unique, checkable word.`,
+- Ensure every entry in acceptableAnswers is something that, if a player said it, a reasonable human judge would accept as correct.${avoidList.length > 0 ? `
+- This clue must be about a completely different fact/topic than all of these already-used answers in this category — do not repeat or closely rephrase any of them: ${avoidList.join('; ')}.` : ''}`,
           },
         ],
       }),
@@ -95,8 +98,8 @@ Guidelines:
     }
 
     // Validate the clue data
-    if (!clueData.clue || !clueData.answer || !clueData.correctAnswerKeyword) {
-      return res.status(500).json({ 
+    if (!clueData.clue || !clueData.answer || !Array.isArray(clueData.acceptableAnswers) || clueData.acceptableAnswers.length === 0) {
+      return res.status(500).json({
         error: 'Incomplete clue data',
         received: clueData
       });
